@@ -149,4 +149,4 @@ workflows:
             tags:
               only: /^v.*/
           requires:
-            - pause_workflow
+            - paused_workflow
