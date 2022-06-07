@@ -1,5 +1,6 @@
 version: 2.1
-
+orbs:
+  slack: circleci/slack@4.1
 
 jobs:
   build-frontend:
@@ -96,6 +97,24 @@ jobs:
             npm audit --audit-level=critical
 
 
+  deploy:
+    docker:
+      - image: 'cimg/base:stable'
+    steps:
+      - run: echo "deploy my app"
+      - slack/notify:
+          event: fail
+          mentions: '@EngineeringTeam'
+          template: basic_fail_1
+      - slack/notify:
+          event: pass
+          template: success_tagged_deploy_1
+  test:
+    docker:
+      - image: 'cimg/base:stable'
+    steps:
+      - run: echo "test my app"
+
 workflows:
   default:
     jobs:
@@ -109,3 +128,25 @@ workflows:
           requires: [build-frontend]
       - scan-backend:
           requires: [build-backend]
+      - test
+      - slack/on-hold:
+          context: UdaPeopleSuperPower
+          filters:
+            tags:
+              only: /^v.*/
+          requires:
+            - test
+      - paused_workflow:
+          filters:
+            tags:
+              only: /^v.*/
+          requires:
+            - test
+            - slack/on-hold
+          type: approval
+      - deploy:
+          filters:
+            tags:
+              only: /^v.*/
+          requires:
+            - pause_workflow
