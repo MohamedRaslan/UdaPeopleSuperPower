@@ -1,5 +1,26 @@
 version: 2.1
 
+orbs:
+  slack: circleci/slack@4.10.1
+
+commands:
+  notify_slack_fails:
+    parameters:
+      on-success:
+        description: Notify also on-success
+        type: boolean
+        default: false
+    steps:
+      - slack/notify:
+          event: fail
+          mentions: '@Mohamed Raslan'
+          template: basic_fail_1
+      - when:
+          condition: << parameters.on-success >>
+          steps:
+            - slack/notify:
+                event: pass
+                template: basic_success_1
 
 jobs:
   build-frontend:
@@ -18,6 +39,7 @@ jobs:
       - save_cache:
           paths: [frontend/node_modules]
           key: frontend-build
+      - notify_slack_fails
 
   build-backend:
     docker:
@@ -35,6 +57,7 @@ jobs:
       - save_cache:
           paths: [backend/node_modules]
           key: backend-build
+      - notify_slack_fails
 
   test-frontend:
     docker:
@@ -49,6 +72,7 @@ jobs:
             cd frontend
             npm install
             npm run test
+      - notify_slack_fails
 
   test-backend:
     docker:
@@ -63,6 +87,7 @@ jobs:
             cd backend
             npm install
             npm run test
+      - notify_slack_fails
 
   scan-frontend:
     docker:
@@ -78,6 +103,7 @@ jobs:
             npm install
             npm audit fix --audit-level=critical --force
             npm audit --audit-level=critical
+      - notify_slack_fails
 
   scan-backend:
     docker:
@@ -92,20 +118,25 @@ jobs:
             cd backend
             npm install
             npm audit fix --audit-level=critical --force
-            npm audit fix --force
             npm audit --audit-level=critical
-
+      - notify_slack_fails
 
 workflows:
   default:
     jobs:
-      - build-frontend
-      - build-backend
+      - build-frontend:
+          context: UdaPeopleSuperPower
+      - build-backend:
+          context: UdaPeopleSuperPower
       - test-frontend:
+          context: UdaPeopleSuperPower
           requires: [build-frontend]
       - test-backend:
+          context: UdaPeopleSuperPower
           requires: [build-backend]
       - scan-frontend:
+          context: UdaPeopleSuperPower
           requires: [build-frontend]
       - scan-backend:
+          context: UdaPeopleSuperPower
           requires: [build-backend]
