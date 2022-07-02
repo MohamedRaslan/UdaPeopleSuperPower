@@ -147,17 +147,24 @@ jobs:
 workflows:
   default:
     jobs:
-      - build-frontend
-      - build-backend
+      - build-frontend:
+          context: UdaPeopleSuperPower
+      - build-backend:
+          context: UdaPeopleSuperPower
       - test-frontend:
+          context: UdaPeopleSuperPower
           requires: [build-frontend]
       - test-backend:
+          context: UdaPeopleSuperPower
           requires: [build-backend]
       - scan-frontend:
+          context: UdaPeopleSuperPower
           requires: [build-frontend]
       - scan-backend:
+          context: UdaPeopleSuperPower
           requires: [build-backend]
-      - test
+      - test:
+          context: UdaPeopleSuperPower
       - slack/on-hold:
           context: UdaPeopleSuperPower
           filters:
