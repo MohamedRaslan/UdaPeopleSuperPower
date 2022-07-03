@@ -175,9 +175,9 @@ jobs:
             cat ./.circleci/ansible/inventory.txt
 
       - persist_to_workspace:
-          root: .
+          root: ./circleci/ansible
           paths:
-            - circleci/ansible/inventory.txt
+            - inventory.txt
 
       -   destroy-environment:
            current_workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
