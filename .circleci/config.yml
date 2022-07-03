@@ -165,8 +165,6 @@ jobs:
            --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"  \
            --tags project=udapeople
 
-      --filters "Name=tag:Project,Values=udacity" \
-      --output text >> inventory
       - run:
           name: Add the EC2 instance IP to the Ansible inventory
           command: |
