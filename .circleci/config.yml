@@ -184,6 +184,30 @@ jobs:
 
       - notify_slack_fails
 
+  configure-infrastructure:
+    docker:
+      - image: ansible/ansible
+    steps:
+      - checkout
+      - add_ssh_keys:
+          fingerprints: ["b2:a3:3f:62:e3:08:3a:e7:6a:6e:58:dd:34:86:41:9e"]
+      - attach_workspace:
+          at: .circleci/ansible/
+      - run:
+          name: Install dependencies
+          command: |
+            apk add --update tar gzip ansible awscli
+
+      - run:
+          name: Configure server
+          command: |
+            cd .circleci/ansible
+            ansible-playbook -i inventory.txt configure-server.yml
+
+      -   destroy-environment:
+           current_workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
+      - notify_slack_fails
+
 
 workflows:
   default:
