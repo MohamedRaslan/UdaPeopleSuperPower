@@ -231,19 +231,11 @@ jobs:
 
   run-migrations:
     docker:
-      - image: amazon/aws-cli
+      - image: circleci/node:13
     steps:
       - checkout
       - attach_workspace:
           at: .circleci/ansible/
-      - run:
-          name: Install dependencies
-          command: |
-            yum install -y tar gzip python3 curl
-            pip3 install ansible awscli
-            curl -sL https://rpm.nodesource.com/setup_12.x | bash -
-            yum install -y gcc-c++ make
-            yum install -y nodejs
 
       - run:
           name: Run migrations
@@ -262,10 +254,6 @@ jobs:
                 curl https://kvdb.io/VLkDX5m1CdjRzJ6samFuRw/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
             fi
 
-      - destroy-environment:
-           current_workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
-      - revert-migrations:
-           current_workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
       - notify_slack_fails
 
   deploy-frontend:
