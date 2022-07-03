@@ -26,8 +26,8 @@ commands:
     description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
     parameters:
       current_workflow_id:
-      description: The id of the currently running workflow
-      type: string
+        description: The id of the currently running workflow
+        type: string
     steps:
       - run:
           name: Destroy environments
@@ -42,15 +42,15 @@ commands:
     description: Revert the last migration if successfully run in the current workflow.
     parameters:
       current_workflow_id:
-      description: The id of the currently running workflow
-      type: string
+        description: The id of the currently running workflow
+        type: string
     steps:
       - run:
           name: Revert migrations
           when: on_fail
           command: |
             # Curl command here to see if there was a successful migration associated with the workflow id, store result in SUCCESS variable
-            SUCCESS = $(curl --insecure  https://kvdb.io/VLkDX5m1CdjRzJ6samFuRw/migration_<< parameters.workflow_id >>)
+            SUCCESS = $(curl --insecure  https://kvdb.io/VLkDX5m1CdjRzJ6samFuRw/migration_<< parameters.current_workflow_id >>)
             if(( $SUCCESS==1 ));
             then
               cd ~/project/backend
