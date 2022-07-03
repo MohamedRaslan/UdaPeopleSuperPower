@@ -22,6 +22,21 @@ commands:
                 event: pass
                 template: basic_success_1
 
+  destroy-environment:
+    description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
+    parameters:
+        current_workflow_id:
+         description: The id of the currently running workflow
+         type: string
+    steps:
+      - run:
+          name: Destroy environments
+          when: on_fail
+          command: |
+             aws s3 rm s3://udapeople-<<parameters.current_workflow_id>> --recursive
+             aws s3 rb s3://udapeople-<<parameters.current_workflow_id>>
+             aws cloudformation delete-stack --stack-name udapeople-frontend-<<parameters.current_workflow_id>>
+             aws cloudformation delete-stack --stack-name udapeople-backend-<<parameters.current_workflow_id>>
 jobs:
   build-frontend:
     docker:
@@ -122,6 +137,56 @@ jobs:
             npm audit --audit-level=critical
       - notify_slack_fails
 
+  deploy-infrastructure:
+    docker:
+      - image: amazon/aws-cli
+    steps:
+      - checkout
+      - run:
+          name: Install tar and gzip
+          command: |
+            yum -y install tar gzip
+
+      - run:
+          name: Ensure backend infrastructure exist
+          command: |
+           aws cloudformation deploy \
+           --template-file .circleci/files/backend.yml \
+           --stack-name "udapeople-backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+           --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"  \
+           --tags project=udapeople
+
+      - run:
+          name: Ensure front-end infrastructure exist
+          command: |
+           aws cloudformation deploy \
+           --template-file .circleci/files/frontend.yml \
+           --stack-name "udapeople-frontend-${CIRCLE_WORKFLOW_ID:0:7}" \
+           --parameter-overrides ID="${CIRCLE_WORKFLOW_ID:0:7}"  \
+           --tags project=udapeople
+
+      --filters "Name=tag:Project,Values=udacity" \
+      --output text >> inventory
+      - run:
+          name: Add the EC2 instance IP to the Ansible inventory
+          command: |
+           aws ec2 describe-instances \
+            --query 'Reservations[*].Instances[*].PublicIpAddress' \
+            --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+            --output text >> ./.circleci/ansible/inventory.txt
+            cat ./.circleci/ansible/inventory.txt
+
+      - persist_to_workspace:
+          root: .
+          paths:
+            - circleci/ansible/inventory.txt
+
+      -   destroy-environment:
+           current_workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
+
+      - notify_slack_fails
+
+
 workflows:
   default:
     jobs:
@@ -141,3 +206,8 @@ workflows:
       - scan-backend:
           context: UdaPeopleSuperPower
           requires: [build-backend]
+      - deploy-infrastructure:
+          requires: [test-frontend, scan-frontend, test-backend, scan-backend]
+          filters:
+            branches:
+              only: [master]
