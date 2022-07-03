@@ -205,6 +205,7 @@ workflows:
           context: UdaPeopleSuperPower
           requires: [build-backend]
       - deploy-infrastructure:
+          context: UdaPeopleSuperPower
           requires: [test-frontend, scan-frontend, test-backend, scan-backend]
           filters:
             branches:
