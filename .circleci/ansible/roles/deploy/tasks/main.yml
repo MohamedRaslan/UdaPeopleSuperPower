@@ -1,0 +1,43 @@
+- name: Update apt repo and cache on all Debian/Ubuntu boxes
+  apt:
+    update_cache: yes
+
+- name: Upgrade all packages on servers
+  apt:
+    upgrade: yes
+
+- name: Create a directory for the backend
+  file:
+    path: ~/backend-app
+    state: directory
+
+- name: Unarchive the backend-app in the backend-app directory
+  unarchive:
+    src: ~/project/artifact.tar.gz
+    dest: ~/backend-app
+
+- name: Install the node dependencies for the backend-app
+  command: npm npm install
+  args:
+    chdir: ~/backend-app
+
+- name: Stop the backend-app if it was running
+  command: pm2 stop default
+  args:
+    chdir: ~/backend-app/dist
+
+- name: install ans start app
+  command:  pm2 start main.js
+  args:
+    chdir: ~/backend-app/dist
+  environment:
+      ENVIRONMENT: production
+      TYPEORM_CONNECTION: "{{ lookup('env', 'TYPEORM_CONNECTION')}}"
+      TYPEORM_ENTITIES: "{{ lookup('env', 'TYPEORM_ENTITIES')}}"
+      TYPEORM_HOST: "{{ lookup('env', 'TYPEORM_HOST')}}"
+      TYPEORM_PORT: 5432
+      TYPEORM_USERNAME: "{{ lookup('env', 'TYPEORM_USERNAME')}}"
+      TYPEORM_PASSWORD: "{{ lookup('env', 'TYPEORM_PASSWORD')}}"
+      TYPEORM_DATABASE: "{{ lookup('env', 'TYPEORM_DATABASE')}}"
+      TYPEORM_MIGRATIONS: "{{ lookup('env', 'TYPEORM_MIGRATIONS')}}"
+      TYPEORM_MIGRATIONS_DIR: "{{ lookup('env', 'TYPEORM_MIGRATIONS_DIR')}}"

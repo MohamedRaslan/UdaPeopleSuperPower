@@ -25,9 +25,9 @@ commands:
   destroy-environment:
     description: Destroy back-end and front-end cloudformation stacks given a workflow ID.
     parameters:
-        current_workflow_id:
-         description: The id of the currently running workflow
-         type: string
+      current_workflow_id:
+      description: The id of the currently running workflow
+      type: string
     steps:
       - run:
           name: Destroy environments
@@ -38,6 +38,25 @@ commands:
              aws cloudformation delete-stack --stack-name udapeople-frontend-<<parameters.current_workflow_id>>
              aws cloudformation delete-stack --stack-name udapeople-backend-<<parameters.current_workflow_id>>
 
+  revert-migrations:
+    description: Revert the last migration if successfully run in the current workflow.
+    parameters:
+      current_workflow_id:
+      description: The id of the currently running workflow
+      type: string
+    steps:
+      - run:
+          name: Revert migrations
+          when: on_fail
+          command: |
+            # Curl command here to see if there was a successful migration associated with the workflow id, store result in SUCCESS variable
+            SUCCESS = $(curl --insecure  https://kvdb.io/VLkDX5m1CdjRzJ6samFuRw/migration_<< parameters.workflow_id >>)
+            if(( $SUCCESS==1 ));
+            then
+              cd ~/project/backend
+              npm install
+              npm run migration:revert
+            fi
 
 jobs:
   build-frontend:
@@ -236,6 +255,149 @@ jobs:
 
       - destroy-environment:
            current_workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
+      - revert-migrations:
+           current_workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
+      - notify_slack_fails
+
+
+  deploy-frontend:
+    docker:
+     - image: amazon/aws-cli
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: |
+            curl -sL https://rpm.nodesource.com/setup_12.x | bash -
+            yum clean all && yum makecache fast
+            yum install -y gcc-c++ make
+            yum install -y nodejs
+            yum install -y tar gzip python3 curl
+            pip3 install ansible awscli
+
+      - run:
+          name: Check the node version
+          command: node -v
+
+      - run:
+          name: Get backend url
+          command: |
+            export BACKEND_IP=$(aws ec2 describe-instances \
+            --query 'Reservations[*].Instances[*].PublicDnsName' \
+            --filters "Name=tag:Name,Values=backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+            --output text)
+            export API_URL="http://${BACKEND_IP}:3030"
+            echo "API_URL = ${API_URL}"
+            echo API_URL="http://${BACKEND_IP}:3030" >> frontend/.env
+            cat frontend/.env
+
+      - run:
+          name: Deploy frontend objects
+          command: |
+            cd frontend
+            cat .env
+            npm install
+            npm run build
+            tar -czvf artifact-"${CIRCLE_WORKFLOW_ID:0:7}".tar.gz dist
+            aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
+
+      - destroy-environment:
+           current_workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
+      - revert-migrations:
+           current_workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
+      - notify_slack_fails
+
+  deploy-backend:
+    docker:
+      - image: python:3.8-alpine
+    steps:
+      - checkout
+      - add_ssh_keys:
+          fingerprints: ["b2:a3:3f:62:e3:08:3a:e7:6a:6e:58:dd:34:86:41:9e"]
+      - attach_workspace:
+          at: .circleci/ansible/
+
+      - run:
+          name: Install dependencies
+          command: |
+            apk add --update tar gzip ansible nodejs npm curl
+            pip3 install awscli
+
+      - run:
+          name: Deploy backend
+          command: |
+            cd backend
+            npm i
+            npm run build
+            cd ..
+            # Zip the directory
+            tar -C backend -czvf artifact.tar.gz .
+
+            cd .circleci/ansible
+            echo "Contents  of the inventory.txt file is -------"
+            cat inventory.txt
+            ansible-playbook -i inventory.txt deploy-backend.yml
+
+      - run:
+          name: Deploy frontend objects
+          command: |
+            cd frontend
+            cat .env
+            npm install
+            npm run build
+            tar -czvf artifact-"${CIRCLE_WORKFLOW_ID:0:7}".tar.gz dist
+            aws s3 cp dist s3://udapeople-${CIRCLE_WORKFLOW_ID:0:7} --recursive
+
+      - destroy-environment:
+           current_workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
+      - revert-migrations:
+           current_workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
+      - notify_slack_fails
+
+  smoke-test:
+    docker:
+      - image: python:3.8-alpine
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: |
+           apk add --update nodejs npm curl
+           pip3 install awscli
+      - run:
+          name: Backend smoke test
+          command: |
+            export BACKEND_IP=$(aws ec2 describe-instances \
+            --query 'Reservations[*].Instances[*].PublicIpAddress' \
+            --filters "Name=tag:Name,Values= backend-${CIRCLE_WORKFLOW_ID:0:7}" \
+            --output text)
+
+            export API_URL="http://${BACKEND_IP}:3030"
+            echo "${API_URL}"
+
+            if curl "${API_URL}/api/status" | grep "ok"
+            then
+                return 0
+            else
+                return 1
+            fi
+
+      - run:
+          name: Frontend smoke test.
+          command: |
+            URL="http://udapeople-${CIRCLE_WORKFLOW_ID:0:7}.s3-website-us-east-1.amazonaws.com/#/employees"
+            echo ${URL}
+            if curl -s ${URL} | grep "Welcome"
+            then
+              return 1
+            else
+              return 1
+            fi
+
+      - destroy-environment:
+           current_workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
+      - revert-migrations:
+           current_workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
       - notify_slack_fails
 
 workflows:
@@ -259,10 +421,22 @@ workflows:
           requires: [build-backend]
       - deploy-infrastructure:
           context: UdaPeopleSuperPower
-          requires: [test-frontend, scan-frontend, test-backend, scan-backend]
+          #requires: [test-frontend, scan-frontend, test-backend, scan-backend]
           filters:
             branches:
               only: [master]
       - configure-infrastructure:
           context: UdaPeopleSuperPower
           requires: [deploy-infrastructure]
+      - run-migrations:
+          context: UdaPeopleSuperPower
+          requires: [configure-infrastructure]
+      - deploy-frontend:
+          context: UdaPeopleSuperPower
+          requires: [run-migrations]
+      - deploy-backend:
+          context: UdaPeopleSuperPower
+          requires: [run-migrations]
+      - smoke-test:
+          context: UdaPeopleSuperPower
+          requires: [deploy-backend, deploy-frontend]
