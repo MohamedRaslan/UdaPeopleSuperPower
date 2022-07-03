@@ -9,7 +9,7 @@
     dest: ~/backend-app
 
 - name: Install the node dependencies for the backend-app
-  command: npm npm install
+  command: npm install
   args:
     chdir: ~/backend-app
 
