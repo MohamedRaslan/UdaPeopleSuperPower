@@ -13,11 +13,6 @@
   args:
     chdir: ~/backend-app
 
-- name: Stop the backend-app if it was running
-  command: pm2 stop default
-  args:
-    chdir: ~/backend-app/dist
-
 - name: install ans start app
   command:  pm2 start main.js
   args:
