@@ -238,6 +238,11 @@ jobs:
           at: .circleci/ansible/
 
       - run:
+          name: Install dependencies
+          command: |
+            pip install awscli
+
+      - run:
           name: Run migrations
           command: |
             cd backend
@@ -267,6 +272,10 @@ jobs:
                 curl https://kvdb.io/VLkDX5m1CdjRzJ6samFuRw/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
             fi
 
+      - destroy-environment:
+           current_workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
+      - revert-migrations:
+           current_workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
       - notify_slack_fails
 
   deploy-frontend:
@@ -336,6 +345,19 @@ jobs:
           command: |
             cd backend
             npm i
+
+            touch .env
+            echo ENVIROMENT=$ENVIROMENT >> ./.env
+            echo TYPEORM_CONNECTION=$TYPEORM_CONNECTION >> ./.env
+            echo TYPEORM_MIGRATIONS_DIR=$TYPEORM_MIGRATIONS_DIR >> ./.env
+            echo TYPEORM_ENTITIES=$TYPEORM_ENTITIES >> ./.env
+            echo TYPEORM_MIGRATIONS=$TYPEORM_MIGRATIONS >> ./.env
+            echo TYPEORM_HOST=$TYPEORM_HOST >> ./.env
+            echo TYPEORM_PORT=$TYPEORM_PORT >> ./.env
+            echo TYPEORM_USERNAME=$TYPEORM_USERNAME >> ./.env
+            echo TYPEORM_PASSWORD=$TYPEORM_PASSWORD >> ./.env
+            echo TYPEORM_DATABASE=$TYPEORM_DATABASE >> ./.env
+
             npm run build
             cd ..
             # Zip the directory
