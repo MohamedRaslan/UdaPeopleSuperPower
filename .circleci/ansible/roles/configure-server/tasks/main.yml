@@ -26,4 +26,4 @@
     state: present
 
 - name: install pm2
-      command: npm install pm2 -g
+  command: npm install pm2 -g
