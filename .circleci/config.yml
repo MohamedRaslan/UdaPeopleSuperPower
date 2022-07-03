@@ -236,6 +236,11 @@ jobs:
       - checkout
       - attach_workspace:
           at: .circleci/ansible/
+      - run:
+          name: Install dependencies
+          command: |
+            apk add --update tar gzip curl
+            pip3 install awscli
 
       - run:
           name: Run migrations
