@@ -1,11 +1,3 @@
-- name: Update apt repo and cache on all Debian/Ubuntu boxes
-  apt:
-    update_cache: yes
-
-- name: Upgrade all packages on servers
-  apt:
-    upgrade: yes
-
 - name: Create a directory for the backend
   file:
     path: ~/backend-app
