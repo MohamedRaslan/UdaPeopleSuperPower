@@ -238,11 +238,6 @@ jobs:
           at: .circleci/ansible/
 
       - run:
-          name: Install dependencies
-          command: |
-            pip install awscli
-
-      - run:
           name: Run migrations
           command: |
             cd backend
@@ -272,8 +267,6 @@ jobs:
                 curl https://kvdb.io/VLkDX5m1CdjRzJ6samFuRw/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
             fi
 
-      - destroy-environment:
-           current_workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
       - revert-migrations:
            current_workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
       - notify_slack_fails
