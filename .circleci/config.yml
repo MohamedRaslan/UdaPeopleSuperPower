@@ -234,3 +234,6 @@ workflows:
           filters:
             branches:
               only: [master]
+      - configure-infrastructure:
+          context: UdaPeopleSuperPower
+          requires: [deploy-infrastructure]
