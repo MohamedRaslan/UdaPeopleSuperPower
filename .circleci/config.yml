@@ -49,8 +49,8 @@ commands:
           when: on_fail
           command: |
             # Curl command here to see if there was a successful migration associated with the workflow id, store result in SUCCESS variable
-            SUCCESS = $(curl --insecure https://kvdb.io/VLkDX5m1CdjRzJ6samFuRw/migration_<< parameters.current_workflow_id >>)
-            if[  ${SUCCESS}==1 ];
+            SUCCESS=$(curl --insecure https://kvdb.io/VLkDX5m1CdjRzJ6samFuRw/migration_<< parameters.current_workflow_id >>)
+            if(( $SUCCESS==1 ));
             then
               cd ~/project/backend
               npm install
@@ -165,9 +165,10 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Install tar and gzip
+          name: Install dependencies
           command: |
-            yum -y install tar gzip
+            yum install -y tar gzip python3 curl
+            pip3 install ansible awscli
 
       - run:
           name: Ensure backend infrastructure exist
@@ -232,17 +233,11 @@ jobs:
 
   run-migrations:
     docker:
-      - image: nikolaik/python-nodejs:python3.7-nodejs14-alpine
+      - image: circleci/node:13
     steps:
       - checkout
       - attach_workspace:
           at: .circleci/ansible/
-
-      - run:
-          name: Install dependencies
-          command: |
-            apk add --update tar gzip ansible
-            pip3 install awscli
 
       - run:
           name: Run migrations
@@ -275,8 +270,6 @@ jobs:
                 curl https://kvdb.io/VLkDX5m1CdjRzJ6samFuRw/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
             fi
 
-      - destroy-environment:
-           current_workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
       - revert-migrations:
            current_workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
       - notify_slack_fails
@@ -423,6 +416,72 @@ jobs:
            current_workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
       - notify_slack_fails
 
+  cloudfront-update:
+    docker:
+     - image:  amazon/aws-cli
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: |
+            yum install -y tar gzip python3 curl
+            pip3 install ansible awscli
+
+      - run:
+          name: Update cloudfront distribution
+          command: |
+            aws cloudformation deploy \
+            --template-file .circleci/files/cloudfront.yml \
+            --stack-name InitialStack  \
+            --parameter-overrides WorkflowID="udapeople-${CIRCLE_WORKFLOW_ID:0:7}" \
+            --tags project=udapeople
+
+      - revert-migrations:
+          workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
+      - destroy-environment:
+          workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
+      - notify_slack_fails
+
+  cleanup:
+    docker:
+     - image:  amazon/aws-cli
+    steps:
+      - checkout
+      - run:
+          name: Install dependencies
+          command: |
+            yum install -y tar gzip python3 curl
+            pip3 install ansible awscli
+
+      - run:
+          name: Get old stack workflow id
+          command: |
+            # Fetch the Old workflow ID
+            export OldWorkflowID=$(aws cloudformation \
+                    list-exports --query "Exports[?Name==\`WorkflowID\`].Value" \
+                    --no-paginate --output text)
+            echo OldWorkflowID: "${OldWorkflowID}"
+            echo CIRCLE_WORKFLOW_ID "${CIRCLE_WORKFLOW_ID:0:7}"
+
+            # Fetch the stack names
+            export STACKS=($(aws cloudformation list-stacks --query "StackSummaries[*].StackName" \
+                    --stack-status-filter CREATE_COMPLETE --no-paginate --output text))
+            echo Stack names: "${STACKS[@]}"
+
+      - run:
+          name: Remove old stacks and files
+          command: |
+            if [[ "${CIRCLE_WORKFLOW_ID:0:7}" =~ "${OldWorkflowID}" ]]
+            then
+              aws s3 rm "s3://udapeople-${OldWorkflowID}" --recursive
+              aws cloudformation delete-stack --stack-name "udapeople-backend-${OldWorkflowID}"
+              aws cloudformation delete-stack --stack-name "udapeople-frontend-${OldWorkflowID}"
+            else
+              echo exit with out cleaning
+            fi
+
+      - notify_slack_fails
+
 workflows:
   default:
     jobs:
@@ -463,3 +522,9 @@ workflows:
       - smoke-test:
           context: UdaPeopleSuperPower
           requires: [deploy-backend, deploy-frontend]
+      - cloudfront-update:
+          context: UdaPeopleSuperPower
+          requires: [smoke-test]
+      - cleanup:
+          context: UdaPeopleSuperPower
+          requires: [cloudfront-update]
