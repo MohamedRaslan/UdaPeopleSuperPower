@@ -504,7 +504,7 @@ workflows:
           requires: [build-backend]
       - deploy-infrastructure:
           context: UdaPeopleSuperPower
-          #requires: [test-frontend, scan-frontend, test-backend, scan-backend]
+          requires: [test-frontend, scan-frontend, test-backend, scan-backend]
           filters:
             branches:
               only: [master]
