@@ -50,9 +50,9 @@ commands:
           when: on_fail
           command: |
             # Curl command here to see if there was a successful migration associated with the workflow id, store result in SUCCESS variable
-            SUCCESS = $(curl https://kvdb.io/VLkDX5m1CdjRzJ6samFuRw/migration_<< parameters.current_workflow_id >>)
+            SUCCESS = $(curl --insecure https://kvdb.io/VLkDX5m1CdjRzJ6samFuRw/migration_<< parameters.current_workflow_id >>)
 
-            if[  ${success}==1 ];
+            if[  ${SUCCESS}==1 ];
             then
               cd ~/project/backend
               npm install
@@ -257,7 +257,7 @@ jobs:
             echo TYPEORM_USERNAME=$TYPEORM_USERNAME >> ./.env
             echo TYPEORM_PASSWORD=$TYPEORM_PASSWORD >> ./.env
             echo TYPEORM_DATABASE=$TYPEORM_DATABASE >> ./.env
-            cat .env
+
             # Run and save the migration output
             npm run migrations > migrations_dump.txt
             cat migrations_dump.txt
