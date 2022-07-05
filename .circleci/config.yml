@@ -267,7 +267,7 @@ jobs:
             pwd && ls -al
             if grep -q "has been executed successfully." ~/project/backend/migrations_dump.txt
             then
-                curl https://kvdb.io/VLkDX5m1CdjRzJ6samFuRw/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
+                curl --insecure https://kvdb.io/VLkDX5m1CdjRzJ6samFuRw/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
             fi
 
       - revert-migrations:
@@ -444,7 +444,7 @@ jobs:
 
   cleanup:
     docker:
-     - image:  amazon/aws-cli
+     - image: amazon/aws-cli
     steps:
       - checkout
       - run:
