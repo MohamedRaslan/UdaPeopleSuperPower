@@ -465,7 +465,7 @@ jobs:
             pip3 install ansible awscli
 
       - run:
-          name: Get old stack workflow id
+          name: Get old stack workflow id and remove old stacks and files
           command: |
             # Fetch the Old workflow ID
             export OldWorkflowID=$(curl --insecure https://kvdb.io/VLkDX5m1CdjRzJ6samFuRw/OldWorkflowID_${CIRCLE_WORKFLOW_ID:0:7})
@@ -476,10 +476,8 @@ jobs:
             export STACKS=($(aws cloudformation list-stacks --query "StackSummaries[*].StackName" \
                     --stack-status-filter CREATE_COMPLETE --no-paginate --output text))
             echo Stack names: "${STACKS[@]}"
+            echo  s3://udapeople-${OldWorkflowID}
 
-      - run:
-          name: Remove old stacks and files
-          command: |
             if [[ "${CIRCLE_WORKFLOW_ID:0:7}" =~ "${OldWorkflowID}" ]]
             then
               aws s3 rm s3://udapeople-${OldWorkflowID} --recursive
