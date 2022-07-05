@@ -34,7 +34,6 @@ commands:
           when: on_fail
           command: |
             aws s3 rm s3://udapeople-<<parameters.current_workflow_id>> --recursive
-            aws s3 rb s3://udapeople-<<parameters.current_workflow_id>>
             aws cloudformation delete-stack --stack-name udapeople-frontend-<<parameters.current_workflow_id>>
             aws cloudformation delete-stack --stack-name udapeople-backend-<<parameters.current_workflow_id>>
 
@@ -233,7 +232,7 @@ jobs:
 
   run-migrations:
     docker:
-      - image: nikolaik/python3.7-nodejs14-alpine
+      - image: nikolaik/python-nodejs:python3.7-nodejs14-alpine
     steps:
       - checkout
       - attach_workspace:
