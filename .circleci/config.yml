@@ -33,11 +33,10 @@ commands:
           name: Destroy environments
           when: on_fail
           command: |
-            echo "NOOOOOOOOOOOOOOOOO"
-            # aws s3 rm s3://udapeople-<<parameters.current_workflow_id>> --recursive
-            # aws s3 rb s3://udapeople-<<parameters.current_workflow_id>>
-            # aws cloudformation delete-stack --stack-name udapeople-frontend-<<parameters.current_workflow_id>>
-            # aws cloudformation delete-stack --stack-name udapeople-backend-<<parameters.current_workflow_id>>
+            aws s3 rm s3://udapeople-<<parameters.current_workflow_id>> --recursive
+            aws s3 rb s3://udapeople-<<parameters.current_workflow_id>>
+            aws cloudformation delete-stack --stack-name udapeople-frontend-<<parameters.current_workflow_id>>
+            aws cloudformation delete-stack --stack-name udapeople-backend-<<parameters.current_workflow_id>>
 
   revert-migrations:
     description: Revert the last migration if successfully run in the current workflow.
@@ -52,12 +51,11 @@ commands:
           command: |
             # Curl command here to see if there was a successful migration associated with the workflow id, store result in SUCCESS variable
             SUCCESS = $(curl --insecure https://kvdb.io/VLkDX5m1CdjRzJ6samFuRw/migration_<< parameters.current_workflow_id >>)
-
             if[  ${SUCCESS}==1 ];
             then
               cd ~/project/backend
               npm install
-              npm run migration:revert
+              npm run migrations:revert
             else
              echo "The revet migration didn't happen"
             fi
@@ -235,11 +233,17 @@ jobs:
 
   run-migrations:
     docker:
-      - image: circleci/node:13
+      - image: nikolaik/python3.7-nodejs14-alpine
     steps:
       - checkout
       - attach_workspace:
           at: .circleci/ansible/
+
+      - run:
+          name: Install dependencies
+          command: |
+            apk add --update tar gzip ansible
+            pip3 install awscli
 
       - run:
           name: Run migrations
@@ -272,6 +276,8 @@ jobs:
                 curl https://kvdb.io/VLkDX5m1CdjRzJ6samFuRw/migration_${CIRCLE_WORKFLOW_ID:0:7}  -d '1'
             fi
 
+      - destroy-environment:
+           current_workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
       - revert-migrations:
            current_workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
       - notify_slack_fails
@@ -439,7 +445,7 @@ workflows:
           requires: [build-backend]
       - deploy-infrastructure:
           context: UdaPeopleSuperPower
-          #requires: [test-frontend, scan-frontend, test-backend, scan-backend]
+          requires: [test-frontend, scan-frontend, test-backend, scan-backend]
           filters:
             branches:
               only: [master]
