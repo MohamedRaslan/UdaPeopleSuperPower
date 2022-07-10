@@ -233,7 +233,7 @@ jobs:
 
   run-migrations:
     docker:
-      - image: circleci/node:13
+      - image: cimg/node:13
     steps:
       - checkout
       - attach_workspace:
@@ -474,8 +474,9 @@ jobs:
             echo Stack names: "${STACKS[@]}"
             echo  s3://udapeople-${OldWorkflowID}
 
-            if [[ "${CIRCLE_WORKFLOW_ID:0:7}" =~ "${OldWorkflowID}" ]]
+            if [[ "${CIRCLE_WORKFLOW_ID:0:7}" != "${OldWorkflowID}" ]]
             then
+              echo cleaning the old environment
               aws s3 rm s3://udapeople-${OldWorkflowID} --recursive
               aws cloudformation delete-stack --stack-name udapeople-backend-${OldWorkflowID}
               aws cloudformation delete-stack --stack-name udapeople-frontend-${OldWorkflowID}
