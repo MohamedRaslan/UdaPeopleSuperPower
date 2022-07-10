@@ -447,7 +447,7 @@ jobs:
       - run:
           name: Clear cloudfront cache
           command: |
-            export CloudFrontDistID= aws cloudfront list-distributions --query "DistributionList.Items[*].{id:Id,origin:Origins.Items[0].DomainName}[?origin=='udapeople-d0af39e.s3.amazonaws.com'].id"  --output text
+            export CloudFrontDistID=$(aws cloudfront list-distributions --query "DistributionList.Items[*].{id:Id,origin:Origins.Items[0].DomainName}[?origin=='udapeople-d0af39e.s3.amazonaws.com'].id"  --output text)
             echo CloudFrontDistID:"${CloudFrontDistID}"
             aws cloudfront create-invalidation --distribution-id ${CloudFrontDistID} --paths '/*'
 
