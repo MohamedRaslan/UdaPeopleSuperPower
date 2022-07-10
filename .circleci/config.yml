@@ -233,7 +233,7 @@ jobs:
 
   run-migrations:
     docker:
-      - image: cimg/node:13
+      - image: cimg/node:12.13.1
     steps:
       - checkout
       - attach_workspace:
