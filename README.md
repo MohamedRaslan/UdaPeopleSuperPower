@@ -41,7 +41,10 @@ For your submission, please submit the following:
   8. Successful promotion job. [[SCREENSHOT08](./docs/screenshots/SCREENSHOT08.png)]
   9. Successful cleanup job. [[SCREENSHOT09](./docs/screenshots/SCREENSHOT09.png)]
   10. Only deploy on pushed to `master` branch. [[SCREENSHOT10](./docs/screenshots/SCREENSHOT10.png)]
-  11. Provide a screenshot of a graph of your EC2 instance including available memory, available disk space, and CPU usage. [[SCREENSHOT11](./docs/screenshots/SCREENSHOT11.png)]
+  11. Provide a screenshot of a graph of your EC2 instance including available memory, available disk space, and CPU usage.
+      1. Memory Usage [[SCREENSHOT11_MemoryUsage](./docs/screenshots/SCREENSHOT11_MemoryUsage.png)]
+      2. CPU Usage    [[SCREENSHOT11_CPU_Usage](./docs/screenshots/SCREENSHOT11_CPU_Usage.png)]
+      3. Disk Usage   [[SCREENSHOT11_DiskUsage](./docs/screenshots/SCREENSHOT11_DiskUsage.png)]
   12. Provide a screenshot of an alert that was sent by Prometheus. [[SCREENSHOT12](./docs/screenshots/SCREENSHOT12.png)]
 
 - Your presentation should be in PDF format named "[presentation.pdf](./docs/presentation.pdf)" and should be included in your code repository root folder.
