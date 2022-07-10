@@ -23,12 +23,12 @@ For your submission, please submit the following:
 
 - A text file named `urls.txt` including:
   1. Public Url to GitHub repository (not private) [[URL01](https://github.com/MohamedRaslan/UdaPeopleSuperPower)]
-  2. Public URL for your S3 Bucket (aka, your green candidate front-end) [[URL02](http://udapeople-853ff40.s3-website-us-east-1.amazonaws.com/)]
+  2. Public URL for your S3 Bucket (aka, your green candidate front-end) [[URL02](http://udapeople-0a5fc92.s3-website-us-east-1.amazonaws.com/)]
   3. Public URL for your CloudFront distribution (aka, your blue production front-end) [[URL03](http://dg4bh2kiolgv0.cloudfront.net/)]
-  4. Public URLs to deployed application back-end in EC2 [[URL04](http://54.164.70.143:3030/api/status)]
+  4. Public URLs to deployed application back-end in EC2 [[URL04](http://44.206.232.128:3030/api/status)]
   5. Public URL to your Prometheus Server [URL05]
-     5.1.  [Prometheus](http://ec2-54-167-199-5.compute-1.amazonaws.com:9090/targets)
-     5.2.  [Alertmanager](http://ec2-54-167-199-5.compute-1.amazonaws.com:9093/#/alerts)
+     5.1.  [Prometheus](http://ec2-3-83-138-250.compute-1.amazonaws.com:9090/targets)
+     5.2.  [Alertmanager](http://ec2-3-83-138-250.compute-1.amazonaws.com:9093/#/alerts)
 
 - Your screenshots in JPG or PNG format, named using the screenshot number listed in the instructions. These screenshots should be included in your code repository in the root folder.
   1. Job failed because of compile errors. [[SCREENSHOT01](./docs/screenshots/SCREENSHOT01.png)]
