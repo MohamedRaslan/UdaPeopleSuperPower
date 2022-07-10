@@ -1,16 +1,20 @@
 - name: Update apt repo and cache on all Debian/Ubuntu boxes
+  become: true
   apt:
     update_cache: yes
 
 - name: Upgrade all packages on servers
+  become: true
   apt:
     upgrade: yes
 
 - name: Install dependencies
+  become: true
   apt:
     name: ["nodejs", "npm"]
     state: latest
     update_cache: yes
 
 - name: install pm2
+  become: true
   command: npm install pm2 -g
