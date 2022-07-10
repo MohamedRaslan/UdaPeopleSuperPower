@@ -444,6 +444,13 @@ jobs:
             --parameter-overrides WorkflowID="${CIRCLE_WORKFLOW_ID:0:7}" \
             --tags project=udapeople
 
+      - run:
+          name: Clear cloudfront cache
+          command: |
+            export OldWorkflowID=$(curl --insecure https://kvdb.io/VLkDX5m1CdjRzJ6samFuRw/OldWorkflowID_${CIRCLE_WORKFLOW_ID:0:7})
+            export CloudFrontDistID=$(aws cloudfront list-distributions --query "DistributionList.Items[*].{id:Id,origin:Origins.Items[0].DomainName}[?origin=='udapeople-${OldWorkflowID}.s3.amazonaws.com'].id"  --output text)
+            echo CloudFrontDistID:"${CloudFrontDistID}"
+            aws cloudfront create-invalidation --distribution-id ${CloudFrontDistID} --paths '/*'
 
       - destroy-environment:
            current_workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
