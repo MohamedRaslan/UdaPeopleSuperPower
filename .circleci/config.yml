@@ -342,7 +342,7 @@ jobs:
             npm i
 
             touch .env
-            echo ENVIROMENT=$ENVIROMENT >> ./.env
+            echo ENVIROMENT=production >> ./.env
             echo TYPEORM_CONNECTION=$TYPEORM_CONNECTION >> ./.env
             echo TYPEORM_MIGRATIONS_DIR=$TYPEORM_MIGRATIONS_DIR >> ./.env
             echo TYPEORM_ENTITIES=$TYPEORM_ENTITIES >> ./.env
@@ -433,7 +433,7 @@ jobs:
             curl --insecure https://kvdb.io/VLkDX5m1CdjRzJ6samFuRw/OldWorkflowID_${CIRCLE_WORKFLOW_ID:0:7} -d ${OldWorkflowID}
 
             echo OldWorkflowID:"${OldWorkflowID}"
-            echo CIRCLE_WORKFLOW_ID "${CIRCLE_WORKFLOW_ID:0:7}"
+            echo CIRCLE_WORKFLOW_ID:"${CIRCLE_WORKFLOW_ID:0:7}"
 
       - run:
           name: Update cloudfront distribution
@@ -443,6 +443,13 @@ jobs:
             --stack-name InitialStack  \
             --parameter-overrides WorkflowID="${CIRCLE_WORKFLOW_ID:0:7}" \
             --tags project=udapeople
+
+      - run:
+          name: Clear cloudfront cache
+          command: |
+            export CloudFrontDistID= aws cloudfront list-distributions --query "DistributionList.Items[*].{id:Id,origin:Origins.Items[0].DomainName}[?origin=='udapeople-d0af39e.s3.amazonaws.com'].id"  --output text
+            echo CloudFrontDistID:"${CloudFrontDistID}"
+            aws cloudfront create-invalidation --distribution-id ${CloudFrontDistID} --paths '/*'
 
       - destroy-environment:
            current_workflow_id: ${CIRCLE_WORKFLOW_ID:0:7}
